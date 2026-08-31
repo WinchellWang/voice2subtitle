@@ -102,7 +102,7 @@ for ext in "${EXTENSIONS[@]}"; do
 done
 
 # Stop Docker Compose and remove images
-docker compose -f "$COMPOSE_FILE" down -rmi all
+docker compose -f "$COMPOSE_FILE" down --rmi all
 
 echo "=========================================="
 echo " All audio processing completed!"
