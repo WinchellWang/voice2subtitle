@@ -23,7 +23,7 @@ EXTENSIONS=("mp3" "wav" "m4a" "flac" "aac" "ogg" "mp4" "mkv")
 # Check whether the container is running
 if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null)" != "true" ]; then
     echo "[Notice] Container is not running. Starting: $CONTAINER_NAME ..."
-    docker compose -f "$COMPOSE_FILE" start
+    docker compose -f "$COMPOSE_FILE" up -d
     
     echo "[Waiting] Container started. Waiting 20 seconds for the model to load..."
     sleep 20
@@ -82,7 +82,7 @@ for ext in "${EXTENSIONS[@]}"; do
     done
 done
 
-docker compose -f COMPOSE_FILE down -rmi all
+docker compose -f "$COMPOSE_FILE" down -rmi all
 
 echo "=========================================="
 echo " All audio processing completed!"
