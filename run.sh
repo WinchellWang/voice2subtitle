@@ -82,7 +82,7 @@ for ext in "${EXTENSIONS[@]}"; do
     done
 done
 
-docker compose -f $COMPOSE_FILE -rmi all
+docker compose -f COMPOSE_FILE down -rmi all
 
 echo "=========================================="
 echo " All audio processing completed!"
