@@ -115,7 +115,6 @@ def merge_srt(input_file, output_file=None, max_duration=12.0, max_gap=0.8):
 
     print(f"[Merged] -> {output_file}")
 
-
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         merge_srt(sys.argv[1])
