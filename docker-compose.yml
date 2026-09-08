@@ -1,4 +1,4 @@
-name: voice2text-project
+name: voice2subtitle-project
 services:
   whisper:
     image: hwdsl2/whisper-server:cuda
