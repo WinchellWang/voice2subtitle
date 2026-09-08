@@ -4,16 +4,13 @@ import sys
 def merge_srt(input_file, output_file=None, max_duration=12.0, max_gap=0.8):
     """
     input_file: Path to the input SRT file
-    output_file: Path to the output file. If None, adds a "_merged" suffix
-                 to the original filename
-    max_duration: Maximum duration (in seconds) of a merged subtitle,
-                  to prevent subtitles from becoming too long
-    max_gap: Maximum allowed gap (in seconds) between two subtitles.
-             If the gap exceeds this value, it is considered a natural pause
-             and the subtitles will not be forcibly merged.
+    output_file: Output path; overwrite the input file when None
+    max_duration: Maximum duration of a merged subtitle in seconds
+    max_gap: Maximum gap between subtitles in seconds; larger gaps are treated as natural pauses
     """
+    # Overwrite the input file when no output path is specified
     if not output_file:
-        output_file = input_file.replace('.srt', '_merged.srt')
+        output_file = input_file
 
     def time_to_sec(time_str):
         h, m, s_ms = time_str.split(':')
@@ -30,24 +27,20 @@ def merge_srt(input_file, output_file=None, max_duration=12.0, max_gap=0.8):
             ms = 0
         return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
+    # Read the entire input file into memory
     with open(input_file, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    # Parse the SRT using a regular expression
-    pattern = re.compile(
-        r'\d+\n'
-        r'(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*'
-        r'(\d{2}:\d{2}:\d{2},\d{3})\n'
-        r'([\s\S]*?)(?=\n\n|\Z)'
-    )
+    # Parse the SRT content with a regular expression
+    pattern = re.compile(r'\d+\n(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})\n([\s\S]*?)(?=\n\n|\Z)')
     matches = pattern.findall(content)
 
     if not matches:
-        print(f"[Skipped] {input_file}: No valid SRT format found")
+        print(f"[SKIP] {input_file} does not contain valid SRT content")
         return
 
     merged_items = []
-
+    
     curr_start = None
     curr_end = None
     curr_text_list = []
@@ -67,53 +60,33 @@ def merge_srt(input_file, output_file=None, max_duration=12.0, max_gap=0.8):
         gap = start_sec - curr_end
         combined_duration = end_sec - curr_start
 
-        # Check whether the previous subtitle ends with sentence-ending
-        # punctuation (. ? !)
-        has_ending_punctuation = bool(
-            re.search(r'[.?!]$', prev_text.strip())
-        )
+        # Check whether the previous subtitle ends with terminal punctuation (. ? !)
+        has_ending_punctuation = bool(re.search(r'[.?!]$', prev_text.strip()))
 
-        # Try to merge if either of the following conditions is met:
-        # 1. The previous subtitle does not end with sentence-ending
-        #    punctuation, the gap is very short (< max_gap), and the
-        #    combined duration does not exceed max_duration.
-        # 2. The two subtitles are almost seamlessly connected in time
-        #    (gap <= 0.1s), and the combined duration does not exceed
-        #    max_duration.
-        should_merge = (
-            (not has_ending_punctuation
-             and gap <= max_gap
-             and combined_duration <= max_duration)
-            or
-            (gap <= 0.1 and combined_duration <= max_duration)
-        )
+        # Merge when either of the following conditions is met:
+        # 1. The previous subtitle lacks terminal punctuation, the gap is short, and total duration stays within the limit
+        # 2. The subtitles are effectively contiguous (gap <= 0.1s) and total duration stays within the limit
+        should_merge = (not has_ending_punctuation and gap <= max_gap and combined_duration <= max_duration) or \
+                       (gap <= 0.1 and combined_duration <= max_duration)
 
         if should_merge:
             curr_end = end_sec
             curr_text_list.append(text)
         else:
-            merged_items.append(
-                (curr_start, curr_end, " ".join(curr_text_list))
-            )
+            merged_items.append((curr_start, curr_end, " ".join(curr_text_list)))
             curr_start = start_sec
             curr_end = end_sec
             curr_text_list = [text]
 
     if curr_start is not None:
-        merged_items.append(
-            (curr_start, curr_end, " ".join(curr_text_list))
-        )
+        merged_items.append((curr_start, curr_end, " ".join(curr_text_list)))
 
-    # Write the new SRT file
+    # Write the result, overwriting the original SRT file
     with open(output_file, 'w', encoding='utf-8') as f:
         for i, (s_sec, e_sec, txt) in enumerate(merged_items, 1):
-            f.write(
-                f"{i}\n"
-                f"{sec_to_time(s_sec)} --> {sec_to_time(e_sec)}\n"
-                f"{txt}\n\n"
-            )
+            f.write(f"{i}\n{sec_to_time(s_sec)} --> {sec_to_time(e_sec)}\n{txt}\n\n")
 
-    print(f"[Merged] -> {output_file}")
+    print(f"[MERGED AND OVERWRITTEN] -> {output_file}")
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
