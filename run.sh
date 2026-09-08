@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # nohup bash run.sh > whisper.log 2>&1 &
-# watch -n 5 nvidia-smi
 
 # ================= Configuration =================
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
