@@ -1,21 +1,19 @@
-name: voice2subtitle-project
+name: v2t
 services:
   whisper:
     image: hwdsl2/whisper-server:cuda
-    container_name: whisper
-    restart: no
-    ports:
-      - "0.0.0.0:8080:9000/tcp"
+    container_name: v2t
+    restart: "no"
     volumes:
-      - $HOME/whisper:/var/lib/whisper
+      - ${HOME}/whisper:/var/lib/whisper
+      - ./:/work
+    working_dir: /work
     environment:
       WHISPER_MODEL: large-v3
+      WHISPER_LANGUAGE: auto
       WHISPER_DEVICE: cuda
-      WHISPER_COMPUTE_TYPE: int8
-      WHISPER_API_KEY : ""
-      WHISPER_DIARIZATION: false
-      WHISPER_VAD_FILTER: true
-      # WHISPER_DIARIZE_NUM_SPEAKERS: 2
+      WHISPER_COMPUTE_TYPE: int8_float32
+      WHISPER_BEAM: 5
     deploy:
       resources:
         reservations:
