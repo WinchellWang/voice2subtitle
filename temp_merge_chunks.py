@@ -57,16 +57,24 @@ if __name__ == "__main__":
                             st, et = parts[1].split(' --> ')
                             
                             local_st = parse_time(st)
-                            # The previous chunk owns the overlap; exclude subtitles from the start of later chunks.
+                            local_et = parse_time(et)
+                            # The previous chunk owns the overlap. When it is available,
+                            # remove the overlapping prefix from the current chunk.
                             previous_chunk_available = (
-                                i > 0 and os.path.exists(chunk_srts[i - 1]) and os.path.getsize(chunk_srts[i - 1]) > 0
+                                i > 0
+                                and os.path.exists(chunk_srts[i - 1])
+                                and os.path.getsize(chunk_srts[i - 1]) > 0
                             )
-                            if previous_chunk_available and local_st < datetime.timedelta(seconds=overlap_sec):
-                                continue
+                            if previous_chunk_available:
+                                overlap_end = datetime.timedelta(seconds=overlap_sec)
+                                if local_et <= overlap_end:
+                                    continue
+                                if local_st < overlap_end:
+                                    local_st = overlap_end
 
                             # Apply the timestamp offset
                             st_td = local_st + offset
-                            et_td = parse_time(et) + offset
+                            et_td = local_et + offset
                             
                             # Write the new index, adjusted timestamps, and subtitle text
                             out.write(f"{sub_idx}\n{format_time(st_td)} --> {format_time(et_td)}\n" + '\n'.join(parts[2:]) + "\n\n")
